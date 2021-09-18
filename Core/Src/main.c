@@ -19,11 +19,13 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "bootpin.h"
+#include "config.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -64,7 +66,18 @@ void SystemClock_Config(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+  bootpinInit();
+  if (bootpinStartFirmware() == true) {
+    if (*((uint32_t*)FIRMWARE_START) != 0xFFFFFFFFU) {
+      void (*firmware)(void) __attribute__((noreturn)) = (void *)(*(uint32_t*)(FIRMWARE_START + 4));
+      bootpinDeinit();
+      // Start firmware
+      SCB->VTOR = FIRMWARE_START | 0;
+      // NVIC_SetVectorTable(FIRMWARE_START, 0);
+      __set_MSP(*((uint32_t*) FIRMWARE_START));
+      firmware();
+    }
+  } 
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -80,19 +93,25 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+  HAL_SetTickFreq(HAL_TICK_FREQ_1KHZ);
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
-
+  
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  HAL_GPIO_WritePin(BLUE_L_GPIO_Port, BLUE_L_Pin, GPIO_PIN_RESET);
   while (1)
   {
+    if (HAL_GetTick() % 500 == 0)
+    HAL_GPIO_TogglePin(BLUE_L_GPIO_Port, BLUE_L_Pin);
+
+    
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
