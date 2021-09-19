@@ -28,6 +28,7 @@
 #include "config.h"
 #include "crtp.h"
 #include "syslink.h"
+#include "debug.h"
 #include <string.h>
 /* USER CODE END Includes */
 
@@ -69,7 +70,7 @@ void SystemClock_Config(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  bootpinInit();
+  // bootpinInit();
   // if (bootpinStartFirmware() == true) {
   //   if (*((uint32_t*)FIRMWARE_START) != 0xFFFFFFFFU) {
   //     void (*firmware)(void) __attribute__((noreturn)) = (void *)(*(uint32_t*)(FIRMWARE_START + 4));
@@ -82,16 +83,15 @@ int main(void)
   //     __set_MSP(*((uint32_t*) FIRMWARE_START));
   //     firmware();
   //   }
-  // } else 
-  if (bootpinNrfReset() == true) {
-    void (*bootloader)(void) __attribute__((noreturn)) = (void *)(*(uint32_t*)(SYSTEM_BASE + 4));
-    bootpinDeinit();
-    // Start bootloader
-    SCB->VTOR = SYSTEM_BASE | 0;
-    __set_MSP(*((uint32_t*) SYSTEM_BASE));
-    bootloader();
-  }
-  bootpinDeinit();
+  // } else if (bootpinNrfReset() == true) {
+  //   void (*bootloader)(void) __attribute__((noreturn)) = (void *)(*(uint32_t*)(SYSTEM_BASE + 4));
+  //   bootpinDeinit();
+  //   // Start bootloader
+  //   SCB->VTOR = SYSTEM_BASE | 0;
+  //   __set_MSP(*((uint32_t*) SYSTEM_BASE));
+  //   bootloader();
+  // }
+  // bootpinDeinit();
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -107,12 +107,14 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
+  // setup systick at 1kHz
   HAL_SetTickFreq(HAL_TICK_FREQ_1KHZ);
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART6_UART_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
   
   /* USER CODE END 2 */
@@ -124,19 +126,20 @@ int main(void)
   unsigned int ledBlueTime = 0;
   CrtpPacket packet;
   struct syslinkPacket slPacket;
-  HAL_GPIO_WritePin(BLUE_L_GPIO_Port, BLUE_L_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_SET);
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, GPIO_PIN_SET);
+  DEBUG_PRINT("START\n");
   while (1) {
     if (syslinkReceive(&slPacket)) {
       if (slPacket.type == SYSLINK_RADIO_RAW) {
         memcpy(packet.raw, slPacket.data, slPacket.length);
-        packet.datalen = slPacket.length-1;
+        packet.datalen = slPacket.length - 1;
 
         ledGreenTime = HAL_GetTick();
         HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 0);
-
         if (bootloaderProcess(&packet)) {
+          
           ledRedTime = HAL_GetTick();
           HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, 0);
 

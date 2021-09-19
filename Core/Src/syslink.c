@@ -25,7 +25,7 @@ bool syslinkReceive(struct syslinkPacket *packet) {
   static enum {state_first_start, state_second_start, state_length, state_type, state_data, state_cksum1, state_cksum2, state_done} state = state_first_start;
   static int step = 0;
   static int length = 0;
-  static uint8_t cksum_a=0, cksum_b=0;
+  static uint8_t cksum_a = 0, cksum_b = 0;
   char c;
 
   packet->length = 0;
@@ -69,16 +69,14 @@ bool syslinkReceive(struct syslinkPacket *packet) {
           cksum_b += cksum_a;
         }
         step++;
-        if (step >= length) {
+        if (step >= length)
           state = state_cksum1;
-        }
         break;
       case state_cksum1:
-        if (c == cksum_a) {
+        if (c == cksum_a)
           state = state_cksum2;
-        } else {  // Wrong checksum
+        else// Wrong checksum
           state = state_first_start;
-        }
         break;
       case state_cksum2:
         if (c == cksum_b) {
@@ -93,26 +91,24 @@ bool syslinkReceive(struct syslinkPacket *packet) {
         break;
     }
   }
-
   return (state == state_done);
 }
 
 bool syslinkSend(struct syslinkPacket *packet) {
   uint8_t cksum_a = 0;
   uint8_t cksum_b = 0;
-  int i;
 
   uartPuts(START);
 
-  uartPutc((unsigned char)packet->type);
+  uartPutc((unsigned char) packet->type);
   cksum_a += packet->type;
   cksum_b += cksum_a;
 
-  uartPutc((unsigned char)packet->length);
+  uartPutc((unsigned char) packet->length);
   cksum_a += packet->length;
   cksum_b += cksum_a;
 
-  for (i = 0; i < packet->length; i++) {
+  for (int i = 0; i < packet->length; i++) {
     uartPutc(packet->data[i]);
     cksum_a += packet->data[i];
     cksum_b += cksum_a;
