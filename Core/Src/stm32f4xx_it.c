@@ -23,6 +23,7 @@
 #include "stm32f4xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "usart.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -56,7 +57,7 @@
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-
+extern UART_HandleTypeDef huart6;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -198,6 +199,40 @@ void SysTick_Handler(void)
 /* For the available peripheral interrupt handler names,                      */
 /* please refer to the startup file (startup_stm32f4xx.s).                    */
 /******************************************************************************/
+
+/**
+  * @brief This function handles USART6 global interrupt.
+  */
+void USART6_IRQHandler(void)
+{
+  /* USER CODE BEGIN USART6_IRQn 0 */
+#ifndef POLLING_TX
+  if (__HAL_UART_GET_FLAG(&huart6, UART_FLAG_TC)) {
+    __HAL_UART_CLEAR_FLAG(&huart6, UART_FLAG_TC);
+    if (txqHead != txqTail) {
+      HAL_UART_Transmit(&huart6, (uint8_t*) &txq[txqTail], 1, 100);
+      // USART_SendData(USART6, txq[txqTail]);
+      txqTail = (txqTail + 1) % TXQ_LEN;
+    }
+  }
+#endif
+  if (__HAL_UART_GET_FLAG(&huart6, UART_FLAG_RXNE)) {
+    if (((rxqHead + 1) % RXQ_LEN) != rxqTail) {
+      HAL_UART_Receive(&huart6, (uint8_t*) &rxq[rxqHead], 1, 100);
+      // rxq[rxqHead] = USART_ReceiveData(USART6);
+      rxqHead = (rxqHead + 1) % RXQ_LEN;
+    } else {
+      HAL_UART_Receive(&huart6, (uint8_t*) &devnull, 1, 100);
+      // devnull = USART_ReceiveData(USART6); //Drop data
+      dropped++;
+    }
+  }
+  /* USER CODE END USART6_IRQn 0 */
+  HAL_UART_IRQHandler(&huart6);
+  /* USER CODE BEGIN USART6_IRQn 1 */
+
+  /* USER CODE END USART6_IRQn 1 */
+}
 
 /* USER CODE BEGIN 1 */
 

@@ -24,8 +24,11 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "bootpin.h"
+#include "boot.h"
 #include "config.h"
+#include "crtp.h"
+#include "syslink.h"
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -67,17 +70,28 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
   bootpinInit();
-  if (bootpinStartFirmware() == true) {
-    if (*((uint32_t*)FIRMWARE_START) != 0xFFFFFFFFU) {
-      void (*firmware)(void) __attribute__((noreturn)) = (void *)(*(uint32_t*)(FIRMWARE_START + 4));
-      bootpinDeinit();
-      // Start firmware
-      SCB->VTOR = FIRMWARE_START | 0;
-      // NVIC_SetVectorTable(FIRMWARE_START, 0);
-      __set_MSP(*((uint32_t*) FIRMWARE_START));
-      firmware();
-    }
-  } 
+  // if (bootpinStartFirmware() == true) {
+  //   if (*((uint32_t*)FIRMWARE_START) != 0xFFFFFFFFU) {
+  //     void (*firmware)(void) __attribute__((noreturn)) = (void *)(*(uint32_t*)(FIRMWARE_START + 4));
+  //     bootpinDeinit();
+  //     // Start firmware
+  //     /* HAL implementation */
+  //     SCB->VTOR = FIRMWARE_START | 0;
+  //     /* STD library implementation */
+  //     // NVIC_SetVectorTable(FIRMWARE_START, 0);
+  //     __set_MSP(*((uint32_t*) FIRMWARE_START));
+  //     firmware();
+  //   }
+  // } else 
+  if (bootpinNrfReset() == true) {
+    void (*bootloader)(void) __attribute__((noreturn)) = (void *)(*(uint32_t*)(SYSTEM_BASE + 4));
+    bootpinDeinit();
+    // Start bootloader
+    SCB->VTOR = SYSTEM_BASE | 0;
+    __set_MSP(*((uint32_t*) SYSTEM_BASE));
+    bootloader();
+  }
+  bootpinDeinit();
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -105,13 +119,51 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  HAL_GPIO_WritePin(BLUE_L_GPIO_Port, BLUE_L_Pin, GPIO_PIN_RESET);
-  while (1)
-  {
-    if (HAL_GetTick() % 500 == 0)
-    HAL_GPIO_TogglePin(BLUE_L_GPIO_Port, BLUE_L_Pin);
+  unsigned int ledGreenTime = 0;
+  unsigned int ledRedTime = 0;
+  unsigned int ledBlueTime = 0;
+  CrtpPacket packet;
+  struct syslinkPacket slPacket;
+  HAL_GPIO_WritePin(BLUE_L_GPIO_Port, BLUE_L_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, GPIO_PIN_SET);
+  while (1) {
+    if (syslinkReceive(&slPacket)) {
+      if (slPacket.type == SYSLINK_RADIO_RAW) {
+        memcpy(packet.raw, slPacket.data, slPacket.length);
+        packet.datalen = slPacket.length-1;
 
-    
+        ledGreenTime = HAL_GetTick();
+        HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 0);
+
+        if (bootloaderProcess(&packet)) {
+          ledRedTime = HAL_GetTick();
+          HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, 0);
+
+          memcpy(slPacket.data, packet.raw, packet.datalen + 1);
+          slPacket.length = packet.datalen + 1;
+          syslinkSend(&slPacket);
+        }
+      }
+    }
+
+    if (ledGreenTime != 0 && HAL_GetTick() - ledGreenTime > 10) {
+      HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 1);
+      ledGreenTime = 0;
+    }
+    if (ledRedTime != 0 && HAL_GetTick() - ledRedTime > 10) {
+      HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, 1);
+      ledRedTime = 0;
+    }
+
+    if ((HAL_GetTick() - ledBlueTime) > 500) {
+      if (HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_2) == GPIO_PIN_SET) {
+        HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, 0);
+      } else {
+        HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, 1);
+      }
+      ledBlueTime = HAL_GetTick();
+    }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
