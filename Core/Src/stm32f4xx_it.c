@@ -223,12 +223,12 @@ void USART6_IRQHandler(void)
       rxqHead = (rxqHead + 1) % RXQ_LEN;
     } else {
       HAL_UART_Receive(&huart6, (uint8_t*) &devnull, 1, 100);
-      // devnull = USART_ReceiveData(USART6); //Drop data
+      // devnull = USART_ReceiveData(USART6); // Drop data
       dropped++;
     }
   }
   /* USER CODE END USART6_IRQn 0 */
-  // HAL_UART_IRQHandler(&huart6);
+  HAL_UART_IRQHandler(&huart6);
   /* USER CODE BEGIN USART6_IRQn 1 */
 
   /* USER CODE END USART6_IRQn 1 */

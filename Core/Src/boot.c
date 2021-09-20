@@ -69,7 +69,6 @@ static const uint32_t sector_address[] = {
 
 bool bootloaderProcess(CrtpPacket *pk) {
 	static char buffer[BUFFER_PAGES * PAGE_SIZE];
-  DEBUG_PRINT("P0\n");
   if ((pk->datalen > 1) && (pk->header == 0xFF) && (pk->data[0] == 0xFF)) {
     if (pk->data[1] == CMD_GET_INFO) {
       GetInfoReturns_t * info = (GetInfoReturns_t *) &pk->data[2];
@@ -136,7 +135,6 @@ bool bootloaderProcess(CrtpPacket *pk) {
       pk->datalen += i;
       return true;
     } else if (pk->data[1] == CMD_WRITE_FLASH) {
-      DEBUG_PRINT("P1\n");
       unsigned int error = 0xFF;
       int flashAddress;
       uint32_t *bufferToFlash;
@@ -148,14 +146,12 @@ bool bootloaderProcess(CrtpPacket *pk) {
 					(params->flashPage >= flashPages) ||
           ((params->flashPage + params->nPages) > flashPages) ||
 					(params->bufferPage >= BUFFER_PAGES)) {
-        DEBUG_PRINT("P2\n");
         //Return a failure answer
         returns->done = 0;
         returns->error = 1;
         pk->datalen = 2 + sizeof(WriteFlashReturns_t);
         return true;
       } else { // Else, if everything is OK, flash the page(s)
-        DEBUG_PRINT("P3\n");
         HAL_FLASH_Unlock();
         __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR |FLASH_FLAG_WRPERR |
                FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR);
@@ -163,18 +159,20 @@ bool bootloaderProcess(CrtpPacket *pk) {
         __disable_irq();
 
         // Erase the page(s)
-				FLASH_EraseInitTypeDef EraseInitStruct;
-				EraseInitStruct.TypeErase = TYPEERASE_SECTORS;
-				EraseInitStruct.VoltageRange = FLASH_VOLTAGE_RANGE_3;
-				EraseInitStruct.NbSectors = 1;
-				uint32_t SectorError = 0;
-        DEBUG_PRINT("P4\n");
         for (int i = 0; i < params->nPages; i++) {
           for (int j = 0; j < 12; j++) {
             if ((uint32_t)(FLASH_BASE + ((uint32_t)params->flashPage * PAGE_SIZE) + (i * PAGE_SIZE)) == sector_address[j]) {
-							EraseInitStruct.Sector = j << 3;
+              FLASH_EraseInitTypeDef EraseInitStruct;
+              EraseInitStruct.TypeErase = FLASH_TYPEERASE_SECTORS;
+              EraseInitStruct.VoltageRange = FLASH_VOLTAGE_RANGE_3;
+              EraseInitStruct.NbSectors = 1;
+              // HAL_FLASHEx_Erase does (Sector << FLASH_CR_SNB_Pos)
+              // which is (Sector << 3)
+              EraseInitStruct.Sector = j;
+              uint32_t SectorError = 0;
+              // STD: FLASH_EraseSector(j << 3, VoltageRange_3)
+              // HAL:
               if (HAL_FLASHEx_Erase(&EraseInitStruct, &SectorError) != HAL_OK) {
-                DEBUG_PRINT("PF1\n");
                 error = 2;
                 goto failure;
               }
@@ -182,29 +180,22 @@ bool bootloaderProcess(CrtpPacket *pk) {
           }
         }
 				
-				
-        DEBUG_PRINT("P5\n");
         // Write the data, long per long
         flashAddress = FLASH_BASE + (params->flashPage * PAGE_SIZE);
         bufferToFlash = (uint32_t *)(&buffer[0] + (params->bufferPage * PAGE_SIZE));
         for (int i = 0; i < ((params->nPages * PAGE_SIZE) / sizeof(uint32_t)); i++, flashAddress += 4) {
           if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, flashAddress, bufferToFlash[i]) != HAL_OK) {
-            DEBUG_PRINT("PF2\n");
             error = 3;
             goto failure;
           }
         }
-				DEBUG_PRINT("P6\n");
         //Everything OK! great, send back an OK packet
         returns->done = 1;
         returns->error = 0;
         pk->datalen = 2 + sizeof(WriteFlashReturns_t);
         HAL_FLASH_Lock();
         __enable_irq();
-        DEBUG_PRINT("P7\n");
         return true;
-        
-        DEBUG_PRINT("P8\n");
 
         failure:
         HAL_FLASH_Lock();
@@ -219,6 +210,5 @@ bool bootloaderProcess(CrtpPacket *pk) {
       }
     }
   }
-  DEBUG_PRINT("PE\n");
   return false;
 }

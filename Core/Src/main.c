@@ -70,28 +70,28 @@ void SystemClock_Config(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  // bootpinInit();
-  // if (bootpinStartFirmware() == true) {
-  //   if (*((uint32_t*)FIRMWARE_START) != 0xFFFFFFFFU) {
-  //     void (*firmware)(void) __attribute__((noreturn)) = (void *)(*(uint32_t*)(FIRMWARE_START + 4));
-  //     bootpinDeinit();
-  //     // Start firmware
-  //     /* HAL implementation */
-  //     SCB->VTOR = FIRMWARE_START | 0;
-  //     /* STD library implementation */
-  //     // NVIC_SetVectorTable(FIRMWARE_START, 0);
-  //     __set_MSP(*((uint32_t*) FIRMWARE_START));
-  //     firmware();
-  //   }
-  // } else if (bootpinNrfReset() == true) {
-  //   void (*bootloader)(void) __attribute__((noreturn)) = (void *)(*(uint32_t*)(SYSTEM_BASE + 4));
-  //   bootpinDeinit();
-  //   // Start bootloader
-  //   SCB->VTOR = SYSTEM_BASE | 0;
-  //   __set_MSP(*((uint32_t*) SYSTEM_BASE));
-  //   bootloader();
-  // }
-  // bootpinDeinit();
+  bootpinInit();
+  if (bootpinStartFirmware() == true) {
+    if (*((uint32_t*)FIRMWARE_START) != 0xFFFFFFFFU) {
+      void (*firmware)(void) __attribute__((noreturn)) = (void *)(*(uint32_t*)(FIRMWARE_START + 4));
+      bootpinDeinit();
+      // Start firmware
+      /* HAL implementation */
+      SCB->VTOR = FIRMWARE_START | 0;
+      /* STD library implementation */
+      // NVIC_SetVectorTable(FIRMWARE_START, 0);
+      __set_MSP(*((uint32_t*) FIRMWARE_START));
+      firmware();
+    }
+  } else if (bootpinNrfReset() == true) {
+    void (*bootloader)(void) __attribute__((noreturn)) = (void *)(*(uint32_t*)(SYSTEM_BASE + 4));
+    bootpinDeinit();
+    // Start bootloader
+    SCB->VTOR = SYSTEM_BASE | 0;
+    __set_MSP(*((uint32_t*) SYSTEM_BASE));
+    bootloader();
+  }
+  bootpinDeinit();
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -129,7 +129,7 @@ int main(void)
   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_SET);
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, GPIO_PIN_SET);
-  DEBUG_PRINT("START\n");
+  
   while (1) {
     if (syslinkReceive(&slPacket)) {
       if (slPacket.type == SYSLINK_RADIO_RAW) {
