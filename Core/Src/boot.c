@@ -77,7 +77,6 @@ bool bootloaderProcess(CrtpPacket *pk) {
       info->nBuffPages = BUFFER_PAGES;
       info->nFlashPages = flashPages;
       info->flashStart = FLASH_START;
-      //memcpy(info->cpuId, cpuidGetId(), CPUID_LEN);
       info->version = PROTOCOL_VERSION;
 
       pk->datalen = 2 + sizeof(GetInfoReturns_t);
@@ -105,7 +104,7 @@ bool bootloaderProcess(CrtpPacket *pk) {
       LoadBufferParameters_t *params = (LoadBufferParameters_t *) &pk->data[2];
       char *data = (char*) &pk->data[2 + sizeof(LoadBufferParameters_t)];
 
-      //Fill the buffer with the given data
+      // Fill the buffer with the given data
       for (int i = 0;
 				i < (pk->datalen - (2 + sizeof(LoadBufferParameters_t))) &&
 				(i + (params->page * PAGE_SIZE) + params->address) < (BUFFER_PAGES * PAGE_SIZE);
@@ -115,7 +114,7 @@ bool bootloaderProcess(CrtpPacket *pk) {
       ReadBufferParameters_t *params = (ReadBufferParameters_t *) &pk->data[2];
       char *data = (char*) &pk->data[2+sizeof(ReadBufferParameters_t)];
 
-      //Return the data required
+      // Return the data required
 			int i;
       for (i = 0; i < 25 && (i + (params->page * PAGE_SIZE) + params->address) < (BUFFER_PAGES * PAGE_SIZE); i++)
         data[i] = buffer[(i + (params->page * PAGE_SIZE) + params->address)];
@@ -127,7 +126,7 @@ bool bootloaderProcess(CrtpPacket *pk) {
       ReadFlashParameters_t *params = (ReadFlashParameters_t *) &pk->data[2];
       char *flash= (char*) FLASH_BASE;
 
-      //Return the data required
+      // Return the data required
 			int i;
       for (i = 0; i < 25 && (i + (params->page * PAGE_SIZE) + params->address) < (flashPages * PAGE_SIZE); i++)
         data[i] = flash[(i+(params->page*PAGE_SIZE)+params->address)];
@@ -151,7 +150,8 @@ bool bootloaderProcess(CrtpPacket *pk) {
         returns->error = 1;
         pk->datalen = 2 + sizeof(WriteFlashReturns_t);
         return true;
-      } else { // Else, if everything is OK, flash the page(s)
+      } else {
+        // Else, if everything is OK, flash the page(s)
         HAL_FLASH_Unlock();
         __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR |FLASH_FLAG_WRPERR |
                FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR);
@@ -170,7 +170,8 @@ bool bootloaderProcess(CrtpPacket *pk) {
               // which is (Sector << 3)
               EraseInitStruct.Sector = j;
               uint32_t SectorError = 0;
-              // STD: FLASH_EraseSector(j << 3, VoltageRange_3)
+              // SPL: 
+              // FLASH_EraseSector(j << 3, VoltageRange_3);
               // HAL:
               if (HAL_FLASHEx_Erase(&EraseInitStruct, &SectorError) != HAL_OK) {
                 error = 2;
@@ -189,7 +190,7 @@ bool bootloaderProcess(CrtpPacket *pk) {
             goto failure;
           }
         }
-        //Everything OK! great, send back an OK packet
+        // Everything OK! great, send back an OK packet
         returns->done = 1;
         returns->error = 0;
         pk->datalen = 2 + sizeof(WriteFlashReturns_t);
@@ -201,8 +202,8 @@ bool bootloaderProcess(CrtpPacket *pk) {
         HAL_FLASH_Lock();
         __enable_irq();
 
-        //If the write procedure failed, send the error packet
-        //TODO: see if it is necessary or wanted to send the reason as well
+        // If the write procedure failed, send the error packet
+        // TODO: see if it is necessary or wanted to send the reason as well
         returns->done = 0;
         returns->error = error;
         pk->datalen = 2 + sizeof(WriteFlashReturns_t);
