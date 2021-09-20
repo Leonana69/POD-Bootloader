@@ -62,6 +62,7 @@ Core/Src/gpio.c \
 Core/Src/usart.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c \
 Core/drivers/Src/_usart.c \
+Core/drivers/Src/_gpio.c \
 Core/utils/Src/eprintf.c \
 Core/modules/Src/boot.c \
 Core/modules/Src/syslink.c

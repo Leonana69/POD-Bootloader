@@ -10,7 +10,7 @@
  */
 
 #include "boot.h"
-#include "gpio.h"
+#include "_gpio.h"
 #include "config.h"
 #include "loaderCommands.h"
 #include <string.h>
@@ -19,7 +19,7 @@
 
 void bootpinInit(void) {
 	GPIO_InitTypeDef GPIO_InitStruct = { 0 };
-  HAL_RCC_GPIO_CLK_ENABLE(READ_PIN_PORT);
+  HAL_RCC_GPIO_CLK_ENABLE(GPIOA);
 	// __HAL_RCC_GPIOA_CLK_ENABLE();
 	__HAL_RCC_GPIOC_CLK_ENABLE();
 	GPIO_InitStruct.Pin = READ_PIN;

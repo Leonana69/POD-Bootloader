@@ -51,5 +51,4 @@
 #define START_PIN_PORT  GPIOC
 #define START_PIN       GPIO_PIN_7
 
-#define HAL_RCC_GPIO_CLK_ENABLE(x) __HAL_RCC_##x##_CLK_ENABLE()
 #endif /* __CONFIG_H__ */
