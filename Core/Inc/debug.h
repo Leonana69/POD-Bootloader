@@ -9,6 +9,6 @@
 #define DEBUG_FMT(FMT) FMT
 #endif
 
-#define DEBUG_PRINT(FMT, ...) eprintf(uart3Putchar, FMT, ## __VA_ARGS__)
+#define DEBUG_PRINT(FMT, ...) eprintf(debugUartPutchar, FMT, ## __VA_ARGS__)
 
 #endif

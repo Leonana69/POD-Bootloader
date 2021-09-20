@@ -40,8 +40,7 @@
 // FIRMWARE_START 0x08004000
 #define FIRMWARE_START (FLASH_BASE + (FLASH_START * PAGE_SIZE))
 
+// same for stm32 series
 #define SYSTEM_BASE     0x1FFF0000
-
-#define RADIO_CHANEL    110
 
 #endif /* __CONFIG_H__ */

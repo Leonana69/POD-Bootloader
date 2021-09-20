@@ -42,8 +42,7 @@ extern "C" {
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
-// tick used for flashing
-static volatile int tick = 0;
+
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/
