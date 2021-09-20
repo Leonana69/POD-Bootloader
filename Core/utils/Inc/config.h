@@ -33,9 +33,9 @@
 
 #define PAGE_SIZE       1024
 
-#ifndef FLASH_BASE
-#define FLASH_BASE      0x08000000
-#endif
+// #ifndef FLASH_BASE
+//     #define FLASH_BASE      0x08000000
+// #endif
 
 // FIRMWARE_START 0x08004000
 #define FIRMWARE_START (FLASH_BASE + (FLASH_START * PAGE_SIZE))
@@ -43,4 +43,13 @@
 // same for stm32 series
 #define SYSTEM_BASE     0x1FFF0000
 
+#define uartMain        huart6
+#define uartDebug       huart3
+
+#define READ_PIN_PORT   GPIOA
+#define READ_PIN        GPIO_PIN_4
+#define START_PIN_PORT  GPIOC
+#define START_PIN       GPIO_PIN_7
+
+#define HAL_RCC_GPIO_CLK_ENABLE(x) __HAL_RCC_##x##_CLK_ENABLE()
 #endif /* __CONFIG_H__ */

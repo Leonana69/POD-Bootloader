@@ -61,9 +61,10 @@ Core/Src/system_stm32f4xx.c \
 Core/Src/gpio.c \
 Core/Src/usart.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c \
-Core/Src/boot.c \
-Core/Src/syslink.c \
-Core/Src/eprintf.c
+Core/drivers/Src/_usart.c \
+Core/utils/Src/eprintf.c \
+Core/modules/Src/boot.c \
+Core/modules/Src/syslink.c
 
 
 # ASM sources
@@ -125,7 +126,10 @@ C_INCLUDES =  \
 -IDrivers/STM32F4xx_HAL_Driver/Inc \
 -IDrivers/STM32F4xx_HAL_Driver/Inc/Legacy \
 -IDrivers/CMSIS/Device/ST/STM32F4xx/Include \
--IDrivers/CMSIS/Include
+-IDrivers/CMSIS/Include \
+-ICore/drivers/Inc \
+-ICore/utils/Inc \
+-ICore/modules/Inc
 
 
 # compile gcc flags

@@ -116,7 +116,7 @@ int main(void)
   MX_USART6_UART_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-  
+  _USART3_UART_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */

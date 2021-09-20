@@ -19,37 +19,38 @@
 
 void bootpinInit(void) {
 	GPIO_InitTypeDef GPIO_InitStruct = { 0 };
-	__HAL_RCC_GPIOA_CLK_ENABLE();
+  HAL_RCC_GPIO_CLK_ENABLE(READ_PIN_PORT);
+	// __HAL_RCC_GPIOA_CLK_ENABLE();
 	__HAL_RCC_GPIOC_CLK_ENABLE();
-	GPIO_InitStruct.Pin = GPIO_PIN_4;
+	GPIO_InitStruct.Pin = READ_PIN;
 	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
 	GPIO_InitStruct.Pull = GPIO_PULLDOWN;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-	GPIO_InitStruct.Pin = GPIO_PIN_7;
-	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+	HAL_GPIO_Init(READ_PIN_PORT, &GPIO_InitStruct);
+	GPIO_InitStruct.Pin = START_PIN;
+	HAL_GPIO_Init(START_PIN_PORT, &GPIO_InitStruct);
 }
 
 void bootpinDeinit(void) {
-	HAL_GPIO_DeInit(GPIOA, GPIO_PIN_4);
-	HAL_GPIO_DeInit(GPIOC, GPIO_PIN_7);
+	HAL_GPIO_DeInit(READ_PIN_PORT, READ_PIN);
+	HAL_GPIO_DeInit(START_PIN_PORT, START_PIN);
 	__HAL_RCC_GPIOA_CLK_DISABLE();
 	__HAL_RCC_GPIOC_CLK_DISABLE();
 }
 
 bool bootpinStartFirmware(void) {
-	return HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4) == GPIO_PIN_RESET &&
-					HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_7) == GPIO_PIN_SET;
+	return HAL_GPIO_ReadPin(READ_PIN_PORT, READ_PIN) == GPIO_PIN_RESET &&
+					HAL_GPIO_ReadPin(START_PIN_PORT, START_PIN) == GPIO_PIN_SET;
 }
 
 bool bootpinStartBootloader(void) {
-	return HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4) == GPIO_PIN_SET &&
-					HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_7) == GPIO_PIN_SET;
+	return HAL_GPIO_ReadPin(READ_PIN_PORT, READ_PIN) == GPIO_PIN_SET &&
+					HAL_GPIO_ReadPin(START_PIN_PORT, START_PIN) == GPIO_PIN_SET;
 }
 
 bool bootpinNrfReset(void) {
-	return HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4) == GPIO_PIN_RESET &&
-					HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_7) == GPIO_PIN_RESET;
+	return HAL_GPIO_ReadPin(READ_PIN_PORT, READ_PIN) == GPIO_PIN_RESET &&
+					HAL_GPIO_ReadPin(START_PIN_PORT, START_PIN) == GPIO_PIN_RESET;
 }
 
 static const uint32_t sector_address[] = {

@@ -21,18 +21,7 @@
 #include "usart.h"
 
 /* USER CODE BEGIN 0 */
-char rxq[RXQ_LEN];
-int rxqTail;
-int rxqHead;
 
-#ifndef POLLING_TX
-char txq[TXQ_LEN];
-int txqTail;
-int txqHead;
-#endif
-
-unsigned int dropped;
-volatile int devnull;
 /* USER CODE END 0 */
 
 UART_HandleTypeDef huart3;
@@ -92,10 +81,7 @@ void MX_USART6_UART_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN USART6_Init 2 */
-#ifndef POLLING_TX
-  __HAL_UART_ENABLE_IT(&huart6, UART_IT_TC);
-#endif
-  __HAL_UART_ENABLE_IT(&huart6, UART_IT_RXNE);
+
   /* USER CODE END USART6_Init 2 */
 
 }
@@ -153,11 +139,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     HAL_NVIC_SetPriority(USART6_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(USART6_IRQn);
   /* USER CODE BEGIN USART6_MspInit 1 */
-    // enable flow control GPIO
-    GPIO_InitStruct.Pin = GPIO_PIN_4;
-    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
   /* USER CODE END USART6_MspInit 1 */
   }
 }
@@ -206,57 +188,7 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 }
 
 /* USER CODE BEGIN 1 */
-bool uartIsRxReady() {
-  return rxqHead != rxqTail;
-}
 
-char uartGetc() {
-  char data = 0;
-  if (uartIsRxReady()) {
-    data = rxq[rxqTail];
-    rxqTail = (rxqTail + 1) % RXQ_LEN;
-  }
-  return data;
-}
-
-bool uartIsTxReady() {
-#ifdef POLLING_TX
-  return true;
-#else
-  return ((txqHead + 1) % TXQ_LEN) != txqTail;
-#endif
-}
-
-void uartPutc(char data) {
-#ifdef POLLING_TX
-  while (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4) == GPIO_PIN_SET);
-  HAL_UART_Transmit(&huart6, (uint8_t*) &data, 1, 100);
-  while (__HAL_UART_GET_FLAG(&huart6, UART_FLAG_TC) == 0);
-#else
-  if (uartIsTxReady()) {
-    txq[txqHead] = data;
-    txqHead = ((txqHead + 1) % TXQ_LEN);
-
-    if (__HAL_UART_GET_FLAG(&huart6, UART_FLAG_TXE)) {
-      HAL_UART_Transmit(&huart6, &txq[txqTail], 1, 100);
-      txqTail = (txqTail + 1) % TXQ_LEN;
-    }
-  } else {
-	  dropped++;
-  }
-#endif
-}
-
-void uartPuts(char *string) {
-  while (*string) {
-    uartPutc(*string++);
-  }
-}
-
-int debugUartPutchar(int c) {
-    HAL_UART_Transmit(&huart3, (uint8_t*) &c, 1, 100);
-    return (unsigned char) c;
-}
 /* USER CODE END 1 */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
