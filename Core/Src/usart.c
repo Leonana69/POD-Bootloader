@@ -117,8 +117,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
   else if(uartHandle->Instance==USART6)
   {
   /* USER CODE BEGIN USART6_MspInit 0 */
-    // enable flow control GPIO
-    __HAL_RCC_GPIOA_CLK_ENABLE();
+
   /* USER CODE END USART6_MspInit 0 */
     /* USART6 clock enable */
     __HAL_RCC_USART6_CLK_ENABLE();

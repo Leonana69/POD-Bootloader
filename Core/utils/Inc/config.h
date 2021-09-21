@@ -46,9 +46,9 @@
 #define uartMain        huart6
 #define uartDebug       huart3
 
-#define READ_PIN_PORT   GPIOA
-#define READ_PIN        GPIO_PIN_4
-#define START_PIN_PORT  GPIOC
-#define START_PIN       GPIO_PIN_7
+#define NRF_FC_PIN_PORT GPIOA
+#define NRF_FC_PIN      GPIO_PIN_4
+#define NRF_TX_PIN_PORT GPIOC
+#define NRF_TX_PIN      GPIO_PIN_7
 
 #endif /* __CONFIG_H__ */

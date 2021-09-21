@@ -9,6 +9,6 @@ void bootpinDeinit(void);
 bool bootpinStartFirmware(void);
 bool bootpinStartBootloader(void);
 bool bootpinNrfReset(void);
-
+void boot(void);
 bool bootloaderProcess(CrtpPacket *pk);
 #endif //__BOOTPIN_H__

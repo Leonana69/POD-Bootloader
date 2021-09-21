@@ -70,28 +70,7 @@ void SystemClock_Config(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  bootpinInit();
-  if (bootpinStartFirmware() == true) {
-    if (*((uint32_t*)FIRMWARE_START) != 0xFFFFFFFFU) {
-      void (*firmware)(void) __attribute__((noreturn)) = (void *)(*(uint32_t*)(FIRMWARE_START + 4));
-      bootpinDeinit();
-      // Start firmware
-      /* HAL implementation */
-      SCB->VTOR = FIRMWARE_START | 0;
-      /* STD library implementation */
-      // NVIC_SetVectorTable(FIRMWARE_START, 0);
-      __set_MSP(*((uint32_t*) FIRMWARE_START));
-      firmware();
-    }
-  } else if (bootpinNrfReset() == true) {
-    void (*bootloader)(void) __attribute__((noreturn)) = (void *)(*(uint32_t*)(SYSTEM_BASE + 4));
-    bootpinDeinit();
-    // Start bootloader
-    SCB->VTOR = SYSTEM_BASE | 0;
-    __set_MSP(*((uint32_t*) SYSTEM_BASE));
-    bootloader();
-  }
-  bootpinDeinit();
+  boot();
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -116,7 +95,7 @@ int main(void)
   MX_USART6_UART_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-  _USART3_UART_Init();
+  _UART_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */

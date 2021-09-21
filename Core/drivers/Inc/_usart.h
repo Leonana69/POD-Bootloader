@@ -6,6 +6,7 @@
  */
 #include "stdbool.h"
 #include "config.h"
+#include "usart.h"
 
 #define POLLING_TX
 
@@ -32,6 +33,6 @@ bool uartIsTxReady();
 void uartPutc(char data);
 void uartPuts(char *string);
 
-void _USART3_UART_Init(void);
+void _UART_Init(void);
 
 #endif

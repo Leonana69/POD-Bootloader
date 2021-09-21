@@ -19,38 +19,37 @@
 
 void bootpinInit(void) {
 	GPIO_InitTypeDef GPIO_InitStruct = { 0 };
-  HAL_RCC_GPIO_CLK_ENABLE(GPIOA);
-	// __HAL_RCC_GPIOA_CLK_ENABLE();
-	__HAL_RCC_GPIOC_CLK_ENABLE();
-	GPIO_InitStruct.Pin = READ_PIN;
+  HAL_RCC_GPIO_CLK_ENABLE(NRF_FC_PIN_PORT);
+  HAL_RCC_GPIO_CLK_ENABLE(NRF_TX_PIN_PORT);
+	GPIO_InitStruct.Pin = NRF_FC_PIN;
 	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
 	GPIO_InitStruct.Pull = GPIO_PULLDOWN;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(READ_PIN_PORT, &GPIO_InitStruct);
-	GPIO_InitStruct.Pin = START_PIN;
-	HAL_GPIO_Init(START_PIN_PORT, &GPIO_InitStruct);
+	HAL_GPIO_Init(NRF_FC_PIN_PORT, &GPIO_InitStruct);
+	GPIO_InitStruct.Pin = NRF_TX_PIN;
+	HAL_GPIO_Init(NRF_TX_PIN_PORT, &GPIO_InitStruct);
 }
 
 void bootpinDeinit(void) {
-	HAL_GPIO_DeInit(READ_PIN_PORT, READ_PIN);
-	HAL_GPIO_DeInit(START_PIN_PORT, START_PIN);
-	__HAL_RCC_GPIOA_CLK_DISABLE();
-	__HAL_RCC_GPIOC_CLK_DISABLE();
+	HAL_GPIO_DeInit(NRF_FC_PIN_PORT, NRF_FC_PIN);
+	HAL_GPIO_DeInit(NRF_TX_PIN_PORT, NRF_TX_PIN);
+	HAL_RCC_GPIO_CLK_DISABLE(NRF_FC_PIN_PORT);
+  HAL_RCC_GPIO_CLK_DISABLE(NRF_TX_PIN_PORT);
 }
 
 bool bootpinStartFirmware(void) {
-	return HAL_GPIO_ReadPin(READ_PIN_PORT, READ_PIN) == GPIO_PIN_RESET &&
-					HAL_GPIO_ReadPin(START_PIN_PORT, START_PIN) == GPIO_PIN_SET;
+	return HAL_GPIO_ReadPin(NRF_FC_PIN_PORT, NRF_FC_PIN) == GPIO_PIN_RESET &&
+					HAL_GPIO_ReadPin(NRF_TX_PIN_PORT, NRF_TX_PIN) == GPIO_PIN_SET;
 }
 
 bool bootpinStartBootloader(void) {
-	return HAL_GPIO_ReadPin(READ_PIN_PORT, READ_PIN) == GPIO_PIN_SET &&
-					HAL_GPIO_ReadPin(START_PIN_PORT, START_PIN) == GPIO_PIN_SET;
+	return HAL_GPIO_ReadPin(NRF_FC_PIN_PORT, NRF_FC_PIN) == GPIO_PIN_SET &&
+					HAL_GPIO_ReadPin(NRF_TX_PIN_PORT, NRF_TX_PIN) == GPIO_PIN_SET;
 }
 
 bool bootpinNrfReset(void) {
-	return HAL_GPIO_ReadPin(READ_PIN_PORT, READ_PIN) == GPIO_PIN_RESET &&
-					HAL_GPIO_ReadPin(START_PIN_PORT, START_PIN) == GPIO_PIN_RESET;
+	return HAL_GPIO_ReadPin(NRF_FC_PIN_PORT, NRF_FC_PIN) == GPIO_PIN_RESET &&
+					HAL_GPIO_ReadPin(NRF_TX_PIN_PORT, NRF_TX_PIN) == GPIO_PIN_RESET;
 }
 
 static const uint32_t sector_address[] = {
@@ -67,6 +66,31 @@ static const uint32_t sector_address[] = {
   [10] = 0x080C0000,
   [11] = 0x080E0000,
 };
+
+void boot(void) {
+  bootpinInit();
+  if (bootpinStartFirmware() == true) {
+    if (*((uint32_t*)FIRMWARE_START) != 0xFFFFFFFFU) {
+      void (*firmware)(void) __attribute__((noreturn)) = (void *)(*(uint32_t*)(FIRMWARE_START + 4));
+      bootpinDeinit();
+      // Start firmware
+      /* HAL implementation */
+      SCB->VTOR = FIRMWARE_START | 0;
+      /* STD library implementation */
+      // NVIC_SetVectorTable(FIRMWARE_START, 0);
+      __set_MSP(*((uint32_t*) FIRMWARE_START));
+      firmware();
+    }
+  } else if (bootpinNrfReset() == true) {
+    void (*bootloader)(void) __attribute__((noreturn)) = (void *)(*(uint32_t*)(SYSTEM_BASE + 4));
+    bootpinDeinit();
+    // Start bootloader
+    SCB->VTOR = SYSTEM_BASE | 0;
+    __set_MSP(*((uint32_t*) SYSTEM_BASE));
+    bootloader();
+  }
+  bootpinDeinit();
+}
 
 bool bootloaderProcess(CrtpPacket *pk) {
 	static char buffer[BUFFER_PAGES * PAGE_SIZE];

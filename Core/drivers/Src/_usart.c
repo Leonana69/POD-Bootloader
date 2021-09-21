@@ -1,5 +1,5 @@
+#include "_gpio.h"
 #include "_usart.h"
-#include "usart.h"
 
 char rxq[RXQ_LEN];
 int rxqTail;
@@ -14,20 +14,20 @@ int txqHead;
 unsigned int dropped;
 volatile int devnull;
 
-void _USART3_UART_Init(void) {
+void _UART_Init(void) {
 #ifndef POLLING_TX
-  __HAL_UART_ENABLE_IT(&huart6, UART_IT_TC);
+  __HAL_UART_ENABLE_IT(&uartMain, UART_IT_TC);
 #endif
-  __HAL_UART_ENABLE_IT(&huart6, UART_IT_RXNE);
-
+  __HAL_UART_ENABLE_IT(&uartMain, UART_IT_RXNE);
 
   // enable flow control GPIO
-	GPIO_InitTypeDef GPIO_InitStruct = {0};
-	GPIO_InitStruct.Pin = READ_PIN;
+  HAL_RCC_GPIO_CLK_ENABLE(NRF_FC_PIN_PORT);
+	GPIO_InitTypeDef GPIO_InitStruct = { 0 };
+	GPIO_InitStruct.Pin = NRF_FC_PIN;
 	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
 	GPIO_InitStruct.Pull = GPIO_PULLDOWN;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
-	HAL_GPIO_Init(READ_PIN_PORT, &GPIO_InitStruct);
+	HAL_GPIO_Init(NRF_FC_PIN_PORT, &GPIO_InitStruct);
 }
 
 bool uartIsRxReady() {
@@ -53,7 +53,7 @@ bool uartIsTxReady() {
 
 void uartPutc(char data) {
 #ifdef POLLING_TX
-  while (HAL_GPIO_ReadPin(READ_PIN_PORT, READ_PIN) == GPIO_PIN_SET);
+  while (HAL_GPIO_ReadPin(NRF_FC_PIN_PORT, NRF_FC_PIN) == GPIO_PIN_SET);
   HAL_UART_Transmit(&uartMain, (uint8_t*) &data, 1, 100);
   while (__HAL_UART_GET_FLAG(&uartMain, UART_FLAG_TC) == 0);
 #else
