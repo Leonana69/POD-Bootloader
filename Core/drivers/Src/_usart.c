@@ -78,6 +78,6 @@ void uartPuts(char *string) {
 }
 
 int uartDebugPutchar(int c) {
-    HAL_UART_Transmit(&uartDebug, (uint8_t*) &c, 1, 100);
-    return (unsigned char) c;
+  HAL_UART_Transmit(&uartDebug, (uint8_t*) &c, 1, 100);
+  return (unsigned char) c;
 }
